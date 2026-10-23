@@ -1,0 +1,90 @@
+% !LW recipe = LuaLaTeX (figure)
+\RequirePackage{fix-cm}
+\documentclass[border=0pt]{standalone}
+\usepackage{amsmath,amssymb,graphicx}
+\usepackage{pgfplots}
+\usetikzlibrary{calc}
+\pgfplotsset{compat=1.18}
+
+\definecolor{countcolor}{RGB}{50,50,255}
+\definecolor{seqcolor}{RGB}{150,0,0}
+\definecolor{fullcolor}{RGB}{60,120,110}
+\def\DashGap{1.50pt}
+% Half-length of the horizontal cap in PGF coordinates (before final resizing).
+\def\ErrorCapSize{1.15pt}
+\pgfdeclarelayer{reference}
+\pgfdeclarelayer{data}
+\pgfplotsset{
+  layers/panel/.define layer set={
+    axis background,axis grid,pre main,reference,main,data,
+    axis ticks,axis lines,axis tick labels,axis descriptions,axis foreground
+  }{/pgfplots/layers/standard},
+  curve/.style={line width=0.9pt,on layer=data},
+  % The error-mark node is sloped along the vertical error bar. Rotate the
+  % local '-' by 90 degrees to obtain HORIZONTAL caps at both endpoints.
+  % Keep the shaft and caps solid even on dashed/dash-dot data curves.
+  mc error/.style={error bars/y dir=both,error bars/y explicit,
+    error bars/error mark=-,
+    error bars/error mark options={rotate=90,mark size=\ErrorCapSize,
+      solid,line width=0.35pt,line cap=butt},
+    error bars/error bar style={solid,line width=0.35pt,line cap=butt}},
+  N curve/.style={curve,countcolor,mark=*,mark size=0.85pt,
+    dash pattern=on 4.5pt off \DashGap on 0.01pt off \DashGap,
+    line cap=round,
+    mark options={fill=white,draw=countcolor,line width=0.4pt}},
+  S curve/.style={curve,seqcolor,mark=square*,mark size=0.88pt,
+    dash pattern=on 2.4pt off \DashGap,
+    mark options={fill=white,draw=seqcolor,line width=0.4pt}},
+  X curve/.style={curve,fullcolor,mark=diamond*,mark size=1.12pt,solid,
+    mark options={fill=white,draw=fullcolor,line width=0.4pt}},
+}
+
+\begin{document}
+% Total PDF width INCLUDING axis labels; legend remains inside lower left.
+\resizebox{41mm}{!}{%
+\begin{tikzpicture}
+\begin{axis}[
+    scale only axis,width=22.0mm,height=25.0mm,
+    xmode=normal,ymode=log,
+    xmin=-0.15,xmax=9.15,ymin=1e-4,ymax=10,
+    enlarge x limits=false,enlarge y limits=false,
+    xlabel={$B/(k_{\rm B}T)$},
+    ylabel={$\mathcal T_{\mathcal O}^{-1}$},
+    label style={font=\fontsize{6.4}{7.0}\selectfont,inner sep=0.2pt},
+    tick label style={font=\fontsize{5.4}{5.9}\selectfont,inner sep=0.35pt},
+    xticklabel style={yshift=-0.15mm},
+    yticklabel style={xshift=0.10mm},
+    xlabel style={yshift=-0.65mm},ylabel style={xshift=0.65mm},
+    xtick={0,3,6,9},minor x tick num=0,
+    ytick={1e-4,1e-3,1e-2,1e-1,1,10},log basis y=10,
+    grid=both,
+    major grid style={line width=0.13pt,draw=black!8},
+    minor grid style={line width=0.10pt,draw=black!3},
+    tick align=inside,tick style={black,line width=0.22pt},
+    major tick length=0.90pt,minor tick length=0.45pt,
+    axis line style={black,line width=0.34pt},line cap=round,line join=round,
+    axis on top=false,set layers=panel,
+    clip=true,clip mode=individual,clip marker paths=true,mark layer=like plot,
+    legend style={font=\fontsize{5.6}{6.1}\selectfont,
+      draw=none,fill=none,text opacity=1,
+      at={(0.02,0.01)},anchor=south west,
+      cells={anchor=west},row sep=2pt,column sep=1pt,
+      inner sep=1.0pt,outer sep=0pt},
+    legend image code/.code={%
+      \draw[mark repeat=2,mark phase=2,#1]
+      plot coordinates {(0mm,0mm) (1.5mm,0mm) (3mm,0mm)};},
+]
+% Each marker: direct SSA estimate, with one-standard-deviation error bars across independent streams.
+\addplot[X curve,mc error] table[x index=0,y index=3,y error index=6] {barrier_data.dat};
+\addlegendentry{$\mathcal T_X^{-1}$}
+\addplot[S curve,mc error] table[x index=0,y index=2,y error index=5] {barrier_data.dat};
+\addlegendentry{$\mathcal T_\Sigma^{-1}$}
+\addplot[N curve,mc error] table[x index=0,y index=1,y error index=4] {barrier_data.dat};
+\addlegendentry{$\mathcal T_N^{-1}$}
+
+\end{axis}
+\path ($(current bounding box.south west)+(-0.15mm,-0.15mm)$)
+ rectangle ($(current bounding box.north east)+(0.15mm,0.15mm)$);
+\end{tikzpicture}%
+}
+\end{document}
